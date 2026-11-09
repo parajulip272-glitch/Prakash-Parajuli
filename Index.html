@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>मेरो खर्च ट्रयाकर</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Noto Sans Devanagari', system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 16px;
+    color: #1f2937;
+  }
+  .app { max-width: 1100px; margin: 0 auto; }
+
+  header {
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { font-size: 1.5rem; color: #4f46e5; }
+  h2 { font-size: 1.05rem; color: #4f46e5; margin-bottom: 12px; }
+
+  .year-bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .year-btn {
+    padding: 8px 14px; border: none; border-radius: 10px;
+    background: #e5e7eb; color: #374151; cursor: pointer;
+    font-weight: 600; font-size: 0.9rem; transition: all .2s;
+  }
+  .year-btn:hover { background: #d1d5db; }
+  .year-btn.active { background: #4f46e5; color: white; }
+  .year-btn.add { background: #10b981; color: white; }
+
+  .section {
+    background: rgba(255,255,255,0.97);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+
+  /* Summary cards */
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin-bottom: 16px; }
+  .summary .card {
+    background: rgba(255,255,255,0.97);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-left: 6px solid #4f46e5;
+  }
+  .summary .card.income { border-left-color: #10b981; }
+  .summary .card.expense { border-left-color: #ef4444; }
+  .summary .card.saving { border-left-color: #f59e0b; }
+  .card .label { font-size: 0.85rem; color: #6b7280; font-weight: 600; }
+  .card .value { font-size: 1.5rem; font-weight: 700; margin-top: 6px; }
+  .card.income .value { color: #10b981; }
+  .card.expense .value { color: #ef4444; }
+  .card.saving .value { color: #f59e0b; }
+
+  /* Forms */
+  .forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 16px; }
+  .form-card h2 { margin-bottom: 12px; }
+  .form-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  input, select, button {
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    outline: none;
+    width: 100%;
+  }
+  input:focus, select:focus { border-color: #4f46e5; }
+  form button {
+    background: #4f46e5; color: white; border: none; cursor: pointer;
+    font-weight: 600; transition: background .2s;
+  }
+  form button:hover { background: #4338ca; }
+  .income-form button { background: #10b981; }
+  .income-form button:hover { background: #059669; }
+
+  /* Category bars */
+  .bar-row { margin-bottom: 10px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 4px; font-weight: 600; color: #374151; }
+  .bar-track { background: #f3f4f6; border-radius: 999px; height: 22px; overflow: hidden; }
+  .bar-fill {
+    height: 100%; border-radius: 999px; transition: width .4s;
+    display: flex; align-items: center; padding-left: 8px;
+    color: white; font-size: 0.75rem; font-weight: 600;
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 10px 8px; background: #f9fafb; color: #4b5563; font-weight: 600; border-bottom: 2px solid #e5e7eb; }
+  td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; }
+  tr:hover td { background: #f9fafb; }
+  .amt-in { color: #10b981; font-weight: 600; }
+  .amt-out { color: #ef4444; font-weight: 600; }
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600; background: #eef2ff; color: #4f46e5;
+  }
+  .del-btn {
+    background: #fee2e2; color: #dc2626; border: none; padding: 5px 10px;
+    border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: auto;
+  }
+  .del-btn:hover { background: #fecaca; }
+
+  .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filters select { width: auto; flex: 1; min-width: 120px; }
+
+  footer {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    padding: 12px; margin-bottom: 24px;
+  }
+  footer button {
+    width: auto; padding: 10px 18px; border: none; border-radius: 10px;
+    cursor: pointer; font-weight: 600; transition: all .2s;
+  }
+  .btn-export { background: #4f46e5; color: white; }
+  .btn-export:hover { background: #4338ca; }
+  .btn-reset { background: #ef4444; color: white; }
+  .btn-reset:hover { background: #dc2626; }
+
+  .empty { text-align: center; padding: 24px; color: #9ca3af; font-size: 0.9rem; }
+  .monthly-table-wrap { overflow-x: auto; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.2rem; }
+    .card .value { font-size: 1.2rem; }
+    th, td { padding: 8px 4px; font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>💰 मेरो खर्च ट्रयाकर</h1>
+    <div class="year-bar" id="yearBar"></div>
+  </header>
+
+  <div class="summary">
+    <div class="card income">
+      <div class="label">कुल आय</div>
+      <div class="value" id="totalIncome">रु 0</div>
+    </div>
+    <div class="card expense">
+      <div class="label">कुल खर्च</div>
+      <div class="value" id="totalExpense">रु 0</div>
+    </div>
+    <div class="card saving">
+      <div class="label">बचत</div>
+      <div class="value" id="totalSaving">रु 0</div>
+    </div>
+  </div>
+
+  <div class="forms">
+    <div class="section form-card income-form">
+      <h2>➕ आय थप्नुहोस्</h2>
+      <form id="incomeForm">
+        <div class="form-row"><input type="date" id="incomeDate" required></div>
+        <div class="form-row"><input type="number" id="incomeAmount" placeholder="रकम (रु)" min="0" step="0.01" required></div>
+        <div class="form-row"><input type="text" id="incomeNote" placeholder="विवरण (जस्तै: तलब, बोनस)"></div>
+        <button type="submit">आय थप्नुहोस्</button>
+      </form>
+    </div>
+
+    <div class="section form-card">
+      <h2>➖ खर्च थप्नुहोस्</h2>
+      <form id="expenseForm">
+        <div class="form-row"><input type="date" id="expenseDate" required></div>
+        <div class="form-row">
+          <select id="expenseCategory" required></select>
+        </div>
+        <div class="form-row"><input type="number" id="expenseAmount" placeholder="रकम (रु)" min="0" step="0.01" required></div>
+        <div class="form-row"><input type="text" id="expenseNote" placeholder="विवरण (जस्तै: दशैं खर्च)"></div>
+        <button type="submit">खर्च थप्नुहोस्</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 कोटी अनुसार खर्च (यो वर्ष)</h2>
+    <div id="categoryBars"></div>
+  </div>
+
+  <div class="section">
+    <h2>📅 मासिक रिपोर्ट</h2>
+    <div class="monthly-table-wrap">
+      <table id="monthlyTable">
+        <thead>
+          <tr><th>महिना</th><th>आय</th><th>खर्च</th><th>बचत</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📋 सबै कारोबार</h2>
+    <div class="filters">
+      <select id="filterType">
+        <option value="all">सबै प्रकार</option>
+        <option value="income">आय मात्र</option>
+        <option value="expense">खर्च मात्र</option>
+      </select>
+      <select id="filterMonth">
+        <option value="all">सबै महिना</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="transactionsTable">
+        <thead>
+          <tr><th>मिति</th><th>प्रकार</th><th>कोटी</th><th>विवरण</th><th>रकम</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <button class="btn-export" id="exportBtn">⬇️ CSV निर्यात</button>
+    <button class="btn-export" id="importBtn">⬆️ ब्याकअप लोड</button>
+    <button class="btn-reset" id="resetBtn">🗑️ सबै रिसेट</button>
+  </footer>
+
+</div>
+
+<input type="file" id="fileInput" accept="application/json" style="display:none;">
+
+<script>
+/* ================= STATE ================= */
+const STORAGE_KEY = 'kharchaTracker_v1';
+const DEFAULT_CATEGORIES = ['घरमा पठाएको', 'सेभिङ', 'सपिङ', 'मेडिकल', 'अन्य'];
+const NEP_MONTHS = ['जनवरी','फेब्रुअरी','मार्च','अप्रिल','मे','जुन','जुलाई','अगस्ट','सेप्टेम्बर','अक्टोबर','नोभेम्बर','डिसेम्बर'];
+
+let state = {
+  selectedYear: new Date().getFullYear(),
+  years: [new Date().getFullYear()],
+  income: [],
+  expenses: [],
+  categories: [...DEFAULT_CATEGORIES]
+};
+
+/* ================= STORAGE ================= */
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    state = { ...state, ...parsed };
+    if (!Array.isArray(state.years) || state.years.length === 0) state.years = [new Date().getFullYear()];
+    if (!Array.isArray(state.categories) || state.categories.length === 0) state.categories = [...DEFAULT_CATEGORIES];
+  } catch (e) { console.warn('Load error:', e); }
+}
+
+/* ================= HELPERS ================= */
+function fmt(n) {
+  const v = Number(n) || 0;
+  return 'रु ' + v.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function pad2(n) { return String(n).padStart(2, '0'); }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
+
+function getYearIncome() {
+  return state.income.filter(i => i.date.startsWith(state.selectedYear + '-'));
+}
+function getYearExpenses() {
+  return state.expenses.filter(e => e.date.startsWith(state.selectedYear + '-'));
+}
+function total(arr) { return arr.reduce((s, x) => s + Number(x.amount), 0); }
+
+/* ================= RENDER: YEAR BAR ================= */
+function renderYearBar() {
+  const bar = document.getElementById('yearBar');
+  bar.innerHTML = '';
+  const years = [...state.years].sort((a,b) => b - a);
+  years.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'year-btn' + (y === state.selectedYear ? ' active' : '');
+    btn.textContent = y;
+    btn.onclick = () => {
+      state.selectedYear = y;
+      save();
+      renderAll();
+    };
+    bar.appendChild(btn);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'year-btn add';
+  addBtn.textContent = '+ नयाँ वर्ष';
+  addBtn.onclick = () => {
+    const y = parseInt(prompt('नयाँ वर्ष हाल्नुहोस् (जस्तै 2026):'), 10);
+    if (!y || isNaN(y) || y < 1900 || y > 2200) return;
+    if (!state.years.includes(y)) state.years.push(y);
+    state.selectedYear = y;
+    save();
+    renderAll();
+  };
+  bar.appendChild(addBtn);
+}
+
+/* ================= RENDER: SUMMARY ================= */
+function renderSummary() {
+  const inc = total(getYearIncome());
+  const exp = total(getYearExpenses());
+  document.getElementById('totalIncome').textContent = fmt(inc);
+  document.getElementById('totalExpense').textContent = fmt(exp);
+  document.getElementById('totalSaving').textContent = fmt(inc - exp);
+}
+
+/* ================= RENDER: CATEGORY SELECT ================= */
+function renderCategorySelect() {
+  const sel = document.getElementById('expenseCategory');
+  sel.innerHTML = '';
+  state.categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  const add = document.createElement('option');
+  add.value = '__add__';
+  add.textContent = '+ नयाँ कोटी थप्नुहोस्...';
+  sel.appendChild(add);
+}
+
+/* ================= RENDER: CATEGORY BARS ================= */
+function renderCategoryBars() {
+  const wrap = document.getElementById('categoryBars');
+  const expenses = getYearExpenses();
+  if (expenses.length === 0) {
+    wrap.innerHTML = '<div class="empty">यो वर्ष अझै कुनै खर्च थपिएको छैन।</div>';
+    return;
+  }
+  const totals = {};
+  state.categories.forEach(c => totals[c] = 0);
+  expenses.forEach(e => {
+    if (!(e.category in totals)) totals[e.category] = 0;
+    totals[e.category] += Number(e.amount);
+  });
+  const entries = Object.entries(totals).filter(([_, v]) => v > 0).sort((a,b) => b[1] - a[1]);
+  const max = Math.max(...entries.map(e => e[1]), 1);
+  const colors = ['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+
+  wrap.innerHTML = '';
+  entries.forEach(([cat, amt], i) => {
+    const pct = (amt / max) * 100;
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label"><span>${cat}</span><span>${fmt(amt)}</span></div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${colors[i % colors.length]};">${pct.toFixed(0)}%</div>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+/* ================= RENDER: MONTHLY TABLE ================= */
+function renderMonthlyTable() {
+  const tbody = document.querySelector('#monthlyTable tbody');
+  tbody.innerHTML = '';
+  const year = state.selectedYear;
+  const inc = getYearIncome();
+  const exp = getYearExpenses();
+
+  for (let m = 1; m <= 12; m++) {
+    const mm = pad2(m);
+    const mi = total(inc.filter(i => i.date.slice(5,7) === mm));
+    const me = total(exp.filter(e => e.date.slice(5,7) === mm));
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${NEP_MONTHS[m-1]}</td>
+      <td class="amt-in">${mi ? fmt(mi) : '—'}</td>
+      <td class="amt-out">${me ? fmt(me) : '—'}</td>
+      <td>${(mi || me) ? fmt(mi - me) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  // total row
+  const ti = total(inc), te = total(exp);
+  const tr = document.createElement('tr');
+  tr.style.fontWeight = '700';
+  tr.style.background = '#f3f4f6';
+  tr.innerHTML = `
+    <td>कुल (${year})</td>
+    <td class="amt-in">${fmt(ti)}</td>
+    <td class="amt-out">${fmt(te)}</td>
+    <td>${fmt(ti - te)}</td>
+  `;
+  tbody.appendChild(tr);
+}
+
+/* ================= RENDER: TRANSACTIONS ================= */
+function renderFilterMonth() {
+  const sel = document.getElementById('filterMonth');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">सबै महिना</option>';
+  NEP_MONTHS.forEach((m, i) => {
+    const opt = document.createElement('option');
+    opt.value = pad2(i+1);
+    opt.textContent = m;
+    sel.appendChild(opt);
+  });
+  sel.value = cur || 'all';
+}
+
+function renderTransactions() {
+  const filterType = document.getElementById('filterType').value;
+  const filterMonth = document.getElementById('filterMonth').value;
+  const tbody = document.querySelector('#transactionsTable tbody');
+  tbody.innerHTML = '';
+
+  let rows = [];
+  state.income.forEach(i => {
+    if (!i.date.startsWith(state.selectedYear + '-')) return;
+    if (filterMonth !== 'all' && i.date.slice(5,7) !== filterMonth) return;
+    rows.push({ ...i, type: 'income' });
+  });
+  state.expenses.forEach(e => {
+    if (!e.date.startsWith(state.selectedYear + '-')) return;
+    if (filterMonth !== 'all' && e.date.slice(5,7) !== filterMonth) return;
+    rows.push({ ...e, type: 'expense' });
+  });
+
+  if (filterType === 'income') rows = rows.filter(r => r.type === 'income');
+  if (filterType === 'expense') rows = rows.filter(r => r.type === 'expense');
+
+  rows.sort((a,b) => b.date.localeCompare(a.date));
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">कुनै कारोबार भेटिएन।</td></tr>';
+    return;
+  }
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    const isInc = r.type === 'income';
+    tr.innerHTML = `
+      <td>${r.date}</td>
+      <td><span class="tag" style="background:${isInc ? '#d1fae5' : '#fee2e2'};color:${isInc ? '#065f46' : '#991b1b'};">${isInc ? 'आय' : 'खर्च'}</span></td>
+      <td>${isInc ? '—' : (r.category || '—')}</td>
+      <td>${r.note || '—'}</td>
+      <td class="${isInc ? 'amt-in' : 'amt-out'}">${isInc ? '+' : '−'} ${fmt(r.amount)}</td>
+      <td><button class="del-btn" data-id="${r.id}" data-type="${r.type}">हटाउने</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.del-btn').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const type = btn.dataset.type;
+      if (!confirm('यो कारोबार हटाउने हो?')) return;
+      if (type === 'income') state.income = state.income.filter(x => x.id !== id);
+      else state.expenses = state.expenses.filter(x => x.id !== id);
+      save();
+      renderAll();
+    };
+  });
+}
+
+/* ================= RENDER ALL ================= */
+function renderAll() {
+  renderYearBar();
+  renderSummary();
+  renderCategorySelect();
+  renderCategoryBars();
+  renderMonthlyTable();
+  renderFilterMonth();
+  renderTransactions();
+}
+
+/* ================= EVENT: INCOME FORM ================= */
+document.getElementById('incomeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const date = document.getElementById('incomeDate').value;
+  const amount = parseFloat(document.getElementById('incomeAmount').value);
+  const note = document.getElementById('incomeNote').value.trim();
+  if (!date || isNaN(amount) || amount <= 0) return;
+
+  // auto-add year if new
+  const y = parseInt(date.slice(0,4), 10);
+  if (!state.years.includes(y)) state.years.push(y);
+
+  state.income.push({ id: uid(), date, amount, note });
+  save();
+  e.target.reset();
+  document.getElementById('incomeDate').value = todayStr();
+  renderAll();
+});
+
+/* ================= EVENT: EXPENSE FORM ================= */
+document.getElementById('expenseForm').addEventListener('submit', e => {
+  e.preventDefault();
+  let category = document.getElementById('expenseCategory').value;
+
+  if (category === '__add__') {
+    const newCat = prompt('नयाँ कोटीको नाम:');
+    if (!newCat || !newCat.trim()) return;
+    category = newCat.trim();
+    if (!state.categories.includes(category)) state.categories.push(category);
+    save();
+    renderCategorySelect();
+    document.getElementById('expenseCategory').value = category;
+    return;
+  }
+
+  const date = document.getElementById('expenseDate').value;
+  const amount = parseFloat(document.getElementById('expenseAmount').value);
+  const note = document.getElementById('expenseNote').value.trim();
+  if (!date || isNaN(amount) || amount <= 0) return;
+
+  const y = parseInt(date.slice(0,4), 10);
+  if (!state.years.includes(y)) state.years.push(y);
+
+  state.expenses.push({ id: uid(), date, category, amount, note });
+  save();
+  e.target.reset();
+  document.getElementById('expenseDate').value = todayStr();
+  renderAll();
+});
+
+/* ================= EVENT: FILTERS ================= */
+document.getElementById('filterType').addEventListener('change', renderTransactions);
+document.getElementById('filterMonth').addEventListener('change', renderTransactions);
+
+/* ================= EXPORT CSV ================= */
+document.getElementById('exportBtn').onclick = () => {
+  const rows = [['मिति','प्रकार','कोटी','विवरण','रकम']];
+  state.income.forEach(i => rows.push([i.date, 'आय', '', i.note || '', i.amount]));
+  state.expenses.forEach(e => rows.push([e.date, 'खर्च', e.category, e.note || '', e.amount]));
+  rows.sort((a,b) => b[0].localeCompare(a[0]));
+  const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kharcha-tracker-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+};
+
+/* ================= IMPORT BACKUP ================= */
+document.getElementById('importBtn').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm('यो ब्याकअप लोड गर्दा हालको डेटा प्रतिस्थापन हुनेछ। जारी राख्ने?')) return;
+      state = { ...state, ...data };
+      save();
+      renderAll();
+      alert('ब्याकअप सफलतापूर्वक लोड भयो!');
+    } catch (err) {
+      alert('अमान्य फाइल। JSON ब्याकअप फाइल छान्नुहोस्।');
+    }
+  };
+  reader.readAsText(file);
+});
+
+/* ================= RESET ================= */
+document.getElementById('resetBtn').onclick = () => {
+  if (!confirm('के तपाईं साँच्चै सबै डेटा मेटाउन चाहनुहुन्छ? यो फिर्ता गर्न सकिँदैन!')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = {
+    selectedYear: new Date().getFullYear(),
+    years: [new Date().getFullYear()],
+    income: [],
+    expenses: [],
+    categories: [...DEFAULT_CATEGORIES]
+  };
+  save();
+  renderAll();
+};
+
+/* ================= INIT ================= */
+load();
+document.getElementById('incomeDate').value = todayStr();
+document.getElementById('expenseDate').value = todayStr();
+renderAll();
+</script>
+</body>
+</html>
